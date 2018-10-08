@@ -1,6 +1,7 @@
 // main.go
 // Copyright 2018 Florian Probst.
-// Aufruf mit mehreren Domains aus einer Textdatei via Powershell:  (Get-Content .\domains.txt) |  % { invoke-expression  ".\CertificateTransparencyExplorer.exe $_" } >>all.csv
+// Aufruf mit mehreren Domains aus einer Textdatei via Powershell:
+// (Get-Content .\domains.txt) |  % { invoke-expression  ".\CertificateTransparencyExplorer.exe $_" } >>all.csv
 
 package main
 
