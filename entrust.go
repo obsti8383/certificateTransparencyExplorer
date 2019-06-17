@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,21 +21,32 @@ const (
 	ACCEPT_LANG = "en-US,en;q=0.8"
 )
 
+type San struct {
+	Type          int    `json:"type"`
+	ValueReversed string `json:"valueReversed"`
+}
+
 type CTEntry struct {
-	LogEntries []string `json:"logEntries"`
-	Cert       []byte   `json:"cert"`
-	Thumbprint string   `json:"thumbprint"`
-	IssuerDN   string   `json:"issuerDN"`
-	SN         []string `json:"sn"`
-	SubjectDN  string   `json:"subjectDN"`
-	SignAlg    string   `json:"signAlg"`
-	San        string   `json:"san"`
-	ValidFrom  string   `json:"validFrom"`
-	ValidTo    string   `json:"validTo"`
+	//LogEntries []string `json:"logEntries"`
+	Cert       []byte `json:"cert"`
+	Thumbprint string `json:"thumbprint"`
+	IssuerDN   string `json:"issuerDN"`
+	SN         string `json:"sn"`
+	SubjectDN  string `json:"subjectDN"`
+	SignAlg    string `json:"signAlg"`
+	San        []San  `json:"san"`
+	ValidFrom  string `json:"validFrom"`
+	ValidTo    string `json:"validTo"`
 }
 
 func GetCTEntries(domain string, includeExpired bool) (ctentries []CTEntry, err error) {
-	jsonByteArray, _ := getJSONfromEntrust(createGetUrl(domain, includeExpired), nil)
+	url := createGetUrl(domain, includeExpired)
+	//log.Println("url:", url)
+	jsonByteArray, err := getJSONfromEntrust(url, nil)
+	if err != nil {
+		return ctentries, err
+	}
+	//log.Println("jsonByteArray =", jsonByteArray)
 	err = json.Unmarshal(jsonByteArray, &ctentries)
 	return ctentries, err
 }
@@ -67,6 +79,7 @@ func getJSONfromEntrust(url string, hvals map[string]string) ([]byte, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	}
 
@@ -81,12 +94,20 @@ func getJSONfromEntrust(url string, hvals map[string]string) ([]byte, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
+		log.Fatal(err)
 		return nil, err
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, errors.New(resp.Status)
 	}
 
+	log.Println("resp: ", resp)
+
 	in, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+
 	return in, nil
 }

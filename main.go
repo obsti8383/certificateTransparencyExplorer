@@ -10,11 +10,15 @@ import (
 	//"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 )
 
 func main() {
 	flag.Parse()
-	ctentries, _ := GetCTEntries(flag.Args()[0], false)
+	ctentries, err := GetCTEntries(flag.Args()[0], false)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//printHeader()
 	for _, entry := range ctentries {
 		cert, _ := x509.ParseCertificate(entry.Cert)
