@@ -100,7 +100,7 @@ func getJSONfromEntrust(url string, hvals map[string]string) ([]byte, error) {
 		return nil, errors.New(resp.Status)
 	}
 
-	log.Println("resp: ", resp)
+	//log.Println("resp: ", resp)
 
 	in, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()

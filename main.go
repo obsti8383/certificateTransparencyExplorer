@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 	ctentries, err := GetCTEntries(flag.Args()[0], false)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error for " + flag.Args()[0] + ": " + err.Error())
 	}
 	//printHeader()
 	for _, entry := range ctentries {
