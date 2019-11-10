@@ -41,6 +41,8 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (ctentries []CTEntryC
 	_ = ioutil.WriteFile("crtsh_response.json", jsonByteArray, 0644)
 
 	err = json.Unmarshal(jsonByteArray, &ctentries)
+
+	// TODO: get complete certificate (as PEM) via: https://crt.sh/?d=2086227961 (min_cert_id)
 	return ctentries, err
 }
 
