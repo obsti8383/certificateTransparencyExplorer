@@ -46,7 +46,10 @@ func GetCTEntries(domain string, includeExpired bool) (ctentries []CTEntry, err 
 	if err != nil {
 		return ctentries, err
 	}
-	//log.Println("jsonByteArray =", jsonByteArray)
+
+	//log.Println("jsonByteArray =", string(jsonByteArray))
+	_ = ioutil.WriteFile("entrust_response.json", jsonByteArray, 0644)
+
 	err = json.Unmarshal(jsonByteArray, &ctentries)
 	return ctentries, err
 }
