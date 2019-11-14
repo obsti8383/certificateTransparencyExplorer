@@ -6,6 +6,7 @@ package main
 import (
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/url"
@@ -47,6 +48,10 @@ func GetCTEntries(domain string, includeExpired bool) (certificates []x509.Certi
 	//log.Println("jsonByteArray =", string(jsonByteArray))
 	_ = ioutil.WriteFile("entrust_response.json", jsonByteArray, 0644)
 
+	if string(jsonByteArray) == "" {
+		return nil, errors.New("Empty answer - no certificates found")
+	}
+
 	var ctentries []CTEntry
 	err = json.Unmarshal(jsonByteArray, &ctentries)
 
@@ -57,6 +62,8 @@ func GetCTEntries(domain string, includeExpired bool) (certificates []x509.Certi
 			return nil, err
 		}
 		certificates = append(certificates, *cert)
+
+		_ = ioutil.WriteFile(cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", entry.Cert, 0644)
 	}
 
 	return certificates, err

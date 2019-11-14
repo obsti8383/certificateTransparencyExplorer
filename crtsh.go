@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
+	"errors"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -31,7 +32,12 @@ type CTEntryCRTSH struct {
 }
 
 func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.Certificate, err error) {
-	url := "https://crt.sh/?q=%." + domain + "&output=json"
+	var url string
+	if includeExpired {
+		url = "https://crt.sh/?q=%." + domain + "&output=json"
+	} else {
+		url = "https://crt.sh/?q=%." + domain + "&output=json&exclude=expired"
+	}
 	log.Println("url:", url)
 	jsonByteArray, err := getJSONfromWebservice(url, nil)
 	if err != nil {
@@ -40,8 +46,15 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 
 	_ = ioutil.WriteFile("crtsh_response.json", jsonByteArray, 0644)
 
+	if string(jsonByteArray) == "[]" {
+		return nil, errors.New("Empty answer - no certificates found")
+	}
+
 	var ctentries []CTEntryCRTSH
 	err = json.Unmarshal(jsonByteArray, &ctentries)
+	if err != nil {
+		return nil, err
+	}
 
 	// get complete certificate (as PEM) via: https://crt.sh/?d=2086227961 (min_cert_id)
 	for _, certsh := range ctentries {
@@ -62,6 +75,9 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 		}
 
 		certificates = append(certificates, *cert)
+
+		// raw cert wegspeichern
+		_ = ioutil.WriteFile(cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", rawCert, 0644)
 	}
 
 	return certificates, err
