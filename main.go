@@ -66,7 +66,7 @@ func main() {
 
 	log.Println("#log entries:", len(allCerts))
 
-	fetchCAcertificatesAndCRLs(allCerts)
+	fetchCAcertificatesAndCRLs(allCerts, nil)
 }
 
 func writeCSV(certificates []x509.Certificate) {
@@ -103,8 +103,11 @@ func writeCSV(certificates []x509.Certificate) {
 	log.Println("#precerts:", nrOfPreCerts)
 }
 
-func fetchCAcertificatesAndCRLs(certificates []x509.Certificate) {
-	// TODO: also fetch Root & Intermediate CAs one level above the EE certificate
+func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched map[string]bool) {
+	if alreadyFetched == nil {
+		alreadyFetched = make(map[string]bool)
+	}
+
 	for _, cert := range certificates {
 		cdps := cert.CRLDistributionPoints
 
@@ -113,8 +116,13 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate) {
 				// ignoring LDAP CDPs
 				continue
 			}
+			if alreadyFetched[cdp] == true {
+				continue
+			}
+
 			fmt.Println("Fetching CRL: " + cdp)
 			resp, err := http.Get(cdp)
+			alreadyFetched[cdp] = true
 			if err != nil {
 				// handle error
 				fmt.Println("Fetching CRL " + cdp + " resulted in error: " + err.Error())
@@ -130,8 +138,13 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate) {
 				// ignoring LDAP AIAs
 				continue
 			}
+			if alreadyFetched[aia] == true {
+				continue
+			}
+
 			fmt.Println("Fetching CA cert: " + aia)
 			resp, err := http.Get(aia)
+			alreadyFetched[aia] = true
 			if err != nil {
 				// handle error
 				fmt.Println("Fetching CA cert " + aia + " resulted in error: " + err.Error())
@@ -148,7 +161,7 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate) {
 
 			if fetchedCert.Issuer.CommonName != fetchedCert.Subject.CommonName {
 				// no root ca, go on fetching...
-				fetchCAcertificatesAndCRLs([]x509.Certificate{*fetchedCert})
+				fetchCAcertificatesAndCRLs([]x509.Certificate{*fetchedCert}, alreadyFetched)
 			}
 		}
 	}
