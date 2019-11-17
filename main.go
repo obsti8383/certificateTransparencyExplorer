@@ -19,8 +19,8 @@ import (
 func main() {
 	flag.Parse()
 	if len(flag.Args()) > 1 {
-		fmt.Println("Usage: .\\CertificateTransparencyExplorer <filename with list of domains>")
-		fmt.Println("Example: .\\CertificateTransparencyExplorer domains.txt")
+		log.Println("Usage: .\\CertificateTransparencyExplorer <filename with list of domains>")
+		log.Println("Example: .\\CertificateTransparencyExplorer domains.txt")
 		return
 	}
 
@@ -60,6 +60,7 @@ func main() {
 	sort.Sort(Certificates(allCerts))
 
 	writeCSV(allCerts)
+	writeDNSList(allCerts)
 
 	//log.Println("#entrust entries:", len(certsEntrust))
 	//log.Println("#crtsh entries:", len(certsCRTSH))
@@ -72,7 +73,7 @@ func main() {
 func writeCSV(certificates []x509.Certificate) {
 	f, err := os.Create("certificates.csv")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		f.Close()
 		return
 	}
@@ -95,12 +96,12 @@ func writeCSV(certificates []x509.Certificate) {
 
 	err = f.Close()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println("certificates.csv written successfully")
-
 	log.Println("#precerts:", nrOfPreCerts)
+	log.Println("certificates.csv written successfully")
+
 }
 
 func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched map[string]bool) {
@@ -120,16 +121,16 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched 
 				continue
 			}
 
-			fmt.Println("Fetching CRL: " + cdp)
+			log.Println("Fetching CRL: " + cdp)
 			resp, err := http.Get(cdp)
 			alreadyFetched[cdp] = true
 			if err != nil {
 				// handle error
-				fmt.Println("Fetching CRL " + cdp + " resulted in error: " + err.Error())
+				log.Println("Fetching CRL " + cdp + " resulted in error: " + err.Error())
 			}
 			defer resp.Body.Close()
 			body, _ := ioutil.ReadAll(resp.Body)
-			_ = ioutil.WriteFile(cert.Issuer.CommonName+".crl", body, 0644)
+			_ = ioutil.WriteFile("crls/"+cert.Issuer.CommonName+".crl", body, 0644)
 		}
 
 		aias := cert.IssuingCertificateURL
@@ -142,22 +143,22 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched 
 				continue
 			}
 
-			fmt.Println("Fetching CA cert: " + aia)
+			log.Println("Fetching CA cert: " + aia)
 			resp, err := http.Get(aia)
 			alreadyFetched[aia] = true
 			if err != nil {
 				// handle error
-				fmt.Println("Fetching CA cert " + aia + " resulted in error: " + err.Error())
+				log.Println("Fetching CA cert " + aia + " resulted in error: " + err.Error())
 				continue
 			}
 			defer resp.Body.Close()
 			body, _ := ioutil.ReadAll(resp.Body)
 			fetchedCert, err := x509.ParseCertificate(body)
 			if err != nil {
-				fmt.Println("Parsing CA cert " + aia + " resulted in error: " + err.Error())
+				log.Println("Parsing CA cert " + aia + " resulted in error: " + err.Error())
 				continue
 			}
-			_ = ioutil.WriteFile(fetchedCert.Issuer.CommonName+"_"+fetchedCert.Subject.CommonName+".cer", body, 0644)
+			_ = ioutil.WriteFile("certs/"+fetchedCert.Issuer.CommonName+"_"+fetchedCert.Subject.CommonName+".cer", body, 0644)
 
 			if fetchedCert.Issuer.CommonName != fetchedCert.Subject.CommonName {
 				// no root ca, go on fetching...
@@ -184,9 +185,43 @@ func getDomainsFromFile(filename string) (domains []string, err error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		domains = append(domains, scanner.Text())
+		line := scanner.Text()
+		if !strings.HasPrefix(line, "#") {
+			domains = append(domains, line)
+		}
 	}
 	return domains, scanner.Err()
+}
+
+func writeDNSList(certificates []x509.Certificate) {
+	domainMap := make(map[string]bool)
+	f, err := os.Create("certificate_domains_found.txt")
+	if err != nil {
+		log.Println(err)
+		f.Close()
+		return
+	}
+	defer f.Close()
+
+	for _, cert := range certificates {
+		if domainMap[cert.Subject.CommonName] != true {
+			fmt.Fprintln(f, cert.Subject.CommonName)
+			domainMap[cert.Subject.CommonName] = true
+		}
+		for _, dnsName := range cert.DNSNames {
+			if domainMap[dnsName] != true {
+				fmt.Fprintln(f, dnsName)
+				domainMap[dnsName] = true
+			}
+		}
+	}
+
+	err = f.Close()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	log.Println("certificate_domains_found.txt written successfully")
 }
 
 type Certificates []x509.Certificate

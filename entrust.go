@@ -63,7 +63,7 @@ func GetCTEntries(domain string, includeExpired bool) (certificates []x509.Certi
 		}
 		certificates = append(certificates, *cert)
 
-		_ = ioutil.WriteFile(cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", entry.Cert, 0644)
+		_ = ioutil.WriteFile("certs/"+cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", entry.Cert, 0644)
 	}
 
 	return certificates, err

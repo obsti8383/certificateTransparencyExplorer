@@ -77,7 +77,7 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 		certificates = append(certificates, *cert)
 
 		// raw cert wegspeichern
-		_ = ioutil.WriteFile(cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", rawCert, 0644)
+		_ = ioutil.WriteFile("certs/"+cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", rawCert, 0644)
 	}
 
 	return certificates, err
