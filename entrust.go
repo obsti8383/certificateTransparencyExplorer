@@ -39,7 +39,7 @@ type CTEntry struct {
 
 func GetCTEntries(domain string, includeExpired bool) (certificates []x509.Certificate, err error) {
 	url := createGetUrl(domain, includeExpired)
-	//log.Println("url:", url)
+	log.Println("url:", url)
 	jsonByteArray, err := getJSONfromWebservice(url, nil)
 	if err != nil {
 		return nil, err
