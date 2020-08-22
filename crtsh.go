@@ -60,7 +60,7 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 	for _, certsh := range ctentries {
 		//log.Println("Getting certificate for: " + certsh.SubjectName + " EndDate: " + certsh.ValidTo)
 		url := "https://crt.sh/?d=" + strconv.Itoa(certsh.CRTSH_ID)
-		log.Println("url:", url)
+		log.Println("url cert:", url)
 		rawCert, err := getJSONfromWebservice(url, nil)
 		if err != nil {
 			return nil, err
