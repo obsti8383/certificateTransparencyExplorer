@@ -27,7 +27,7 @@ type CTEntryCRTSH struct {
 	SubjectName  string `json:"name_value"`
 	ValidFrom    string `json:"not_before"`
 	ValidTo      string `json:"not_after"`
-	CRTSH_ID     int    `json:"min_cert_id"`
+	CRTSH_ID     int    `json:"id"`
 	ISSUER_CA_ID int    `json:"issuer_ca_id"`
 }
 

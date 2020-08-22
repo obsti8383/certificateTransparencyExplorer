@@ -47,14 +47,16 @@ func main() {
 			allCerts = append(allCerts, certsCRTSH...)
 		}
 
-		//entrust
-		certsEntrust, err := GetCTEntries(domain, false)
-		if err != nil {
-			log.Println("Entrust: Error for " + domain + ": " + err.Error())
-		}
-		if certsEntrust != nil {
-			allCerts = append(allCerts, certsEntrust...)
-		}
+		// Entrust currently not working / out-of service
+		// TODO: Instead implement: https://transparencyreport.google.com, API is exposed
+		//  through https://transparencyreport.google.com/transparencyreport/api/v3/httpsreport/ct/certsearch?include_subdomains=true&domain=google.com
+		// certsEntrust, err := GetCTEntries(domain, false)
+		// if err != nil {
+		// 	log.Println("Entrust: Error for " + domain + ": " + err.Error())
+		// }
+		// if certsEntrust != nil {
+		// 	allCerts = append(allCerts, certsEntrust...)
+		// }
 	}
 
 	sort.Sort(Certificates(allCerts))

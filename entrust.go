@@ -3,6 +3,10 @@
 
 package main
 
+////
+// Entrust currently not working / out-of service
+////
+
 import (
 	"crypto/x509"
 	"encoding/json"
