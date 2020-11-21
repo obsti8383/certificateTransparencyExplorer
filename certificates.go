@@ -4,7 +4,7 @@ import (
 	"crypto/x509"
 )
 
-// type to allow to sort files based on validity date (NotBefore)
+// Certificates is a type that allows to sort files based on validity date (NotBefore)
 type Certificates []x509.Certificate
 
 func (a Certificates) Len() int           { return len(a) }

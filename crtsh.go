@@ -13,7 +13,7 @@ import (
 	"strconv"
 )
 
-// Example:
+// Example crt.sh response dataset:
 // {
 //     "issuer_ca_id": 62124,
 //     "issuer_name": "C=US, O=DigiCert Inc, OU=www.digicert.com, CN=Thawte TLS RSA CA G1",
@@ -23,16 +23,19 @@ import (
 //     "not_before": "2019-11-08T00:00:00",
 //     "not_after": "2021-12-07T12:00:00"
 // }
-type CTEntryCRTSH struct {
-	IssuerDN     string `json:"issuer_name"`
-	SubjectName  string `json:"name_value"`
-	ValidFrom    string `json:"not_before"`
-	ValidTo      string `json:"not_after"`
-	CRTSH_ID     int    `json:"id"`
-	ISSUER_CA_ID int    `json:"issuer_ca_id"`
+
+// CTEntryCrtSh represent a certificate in the crt.sh response
+type CTEntryCrtSh struct {
+	IssuerDN    string `json:"issuer_name"`
+	SubjectName string `json:"name_value"`
+	ValidFrom   string `json:"not_before"`
+	ValidTo     string `json:"not_after"`
+	CrtshID     int    `json:"id"`
+	IssuerCaID  int    `json:"issuer_ca_id"`
 }
 
-func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.Certificate, err error) {
+// GetCTEntriesCrtSh collects
+func GetCTEntriesCrtSh(domain string, includeExpired bool) (certificates []x509.Certificate, err error) {
 	var url string
 	if includeExpired {
 		url = "https://crt.sh/?q=%." + domain + "&output=json"
@@ -52,7 +55,7 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 		return nil, errors.New("Empty answer - no certificates found")
 	}
 
-	var ctentries []CTEntryCRTSH
+	var ctentries []CTEntryCrtSh
 	err = json.Unmarshal(jsonByteArray, &ctentries)
 	if err != nil {
 		return nil, err
@@ -63,7 +66,7 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 
 	// get complete certificate (as PEM) via: https://crt.sh/?d=2086227961 (min_cert_id)
 	for _, certsh := range ctentries {
-		url := "https://crt.sh/?d=" + strconv.Itoa(certsh.CRTSH_ID)
+		url := "https://crt.sh/?d=" + strconv.Itoa(certsh.CrtshID)
 		log.Println("downloading raw cert:", url)
 		rawCert, err := getJSONfromWebservice(url, nil)
 		if err != nil {

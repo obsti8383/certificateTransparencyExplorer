@@ -1,5 +1,5 @@
 // Certificate Transparency Explorer
-// Copyright 2018-2020 Florian Probst.
+// Copyright 2018-2020 Florian Probst
 
 package main
 
@@ -8,9 +8,7 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
 	"os"
 	"sort"
 	"strings"
@@ -19,8 +17,8 @@ import (
 func main() {
 	flag.Parse()
 	if len(flag.Args()) > 1 {
-		log.Println("Usage: .\\CertificateTransparencyExplorer <filename of file that contains a list of domains>")
-		log.Println("Example: .\\CertificateTransparencyExplorer domains.txt")
+		log.Println("Usage: .\\certificateTransparencyExplorer <filename of file that contains a list of domains>")
+		log.Println("Example: .\\certificateTransparencyExplorer domains.txt")
 		return
 	}
 
@@ -39,7 +37,7 @@ func main() {
 	allCerts := make([]x509.Certificate, 0)
 	for _, domain := range domains {
 		// get certificates from crt.sh, do not include expired certificates
-		certsCRTSH, err := GetCTEntriesCRTSH(domain, false)
+		certsCRTSH, err := GetCTEntriesCrtSh(domain, false)
 		if err != nil {
 			log.Println("crt.sh: Error for " + domain + ": " + err.Error())
 		}
@@ -64,80 +62,9 @@ func main() {
 	writeCSV(allCerts)
 	writeDNSList(allCerts)
 
-	//log.Println("#entrust entries:", len(certsEntrust))
-	//log.Println("#crtsh entries:", len(certsCRTSH))
-
 	log.Println("Number of transparency log entries found:", len(allCerts))
 
 	fetchCAcertificatesAndCRLs(allCerts, nil)
-}
-
-func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched map[string]bool) {
-	if alreadyFetched == nil {
-		alreadyFetched = make(map[string]bool)
-	}
-
-	// create directory for writing CA certs and CRLs to
-	_ = os.Mkdir("cacerts", 0755)
-	_ = os.Mkdir("crls", 0755)
-
-	for _, cert := range certificates {
-		cdps := cert.CRLDistributionPoints
-
-		for _, cdp := range cdps {
-			if strings.HasPrefix(cdp, "ldap://") {
-				// ignoring LDAP CDPs
-				continue
-			}
-			if alreadyFetched[cdp] == true {
-				continue
-			}
-
-			log.Println("Fetching CRL: " + cdp)
-			resp, err := http.Get(cdp)
-			alreadyFetched[cdp] = true
-			if err != nil {
-				// handle error
-				log.Println("Fetching CRL " + cdp + " resulted in error: " + err.Error())
-			}
-			defer resp.Body.Close()
-			body, _ := ioutil.ReadAll(resp.Body)
-			_ = ioutil.WriteFile("crls/"+cert.Issuer.CommonName+".crl", body, 0644)
-		}
-
-		aias := cert.IssuingCertificateURL
-		for _, aia := range aias {
-			if strings.HasPrefix(aia, "ldap://") {
-				// ignoring LDAP AIAs
-				continue
-			}
-			if alreadyFetched[aia] == true {
-				continue
-			}
-
-			log.Println("Fetching CA cert: " + aia)
-			resp, err := http.Get(aia)
-			alreadyFetched[aia] = true
-			if err != nil {
-				// handle error
-				log.Println("Fetching CA cert " + aia + " resulted in error: " + err.Error())
-				continue
-			}
-			defer resp.Body.Close()
-			body, _ := ioutil.ReadAll(resp.Body)
-			fetchedCert, err := x509.ParseCertificate(body)
-			if err != nil {
-				log.Println("Parsing CA cert " + aia + " resulted in error: " + err.Error())
-				continue
-			}
-			_ = ioutil.WriteFile("cacerts/"+fetchedCert.Issuer.CommonName+"_"+fetchedCert.Subject.CommonName+".cer", body, 0644)
-
-			if fetchedCert.Issuer.CommonName != fetchedCert.Subject.CommonName {
-				// no root ca, go on fetching...
-				fetchCAcertificatesAndCRLs([]x509.Certificate{*fetchedCert}, alreadyFetched)
-			}
-		}
-	}
 }
 
 func getDomainsFromFile(filename string) (domains []string, err error) {
