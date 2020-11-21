@@ -5,6 +5,6 @@ Examples usage:
 Example: ./CertificateTransparencyExplorer domains.txt
 
 where domains.txt contains a plain list of top level domains, e.g.:
-`heise.de`
-`github.com`
+`heise.de
+github.com`
 
