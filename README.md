@@ -12,3 +12,7 @@ github.com</pre></code>
 
 
 Additionally all certificates are fetched from crt.sh, including CA certificates and CRLs and saved in the directories certs, cacerts and crls.
+
+Beneath that all subdomains found in issued certificates are collected an written to file `certificate_domains_found.txt`. This can e.g. be used for finding unknown subdomains in the information gathering phase of an penetration test.
+
+For those who like to look at the raw JSON response from crt.sh this is also written to a file (`crtsh_response.json`).
