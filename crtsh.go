@@ -1,4 +1,4 @@
-// Copyright 2019 Florian Probst.
+// Copyright 2019-2020 Florian Probst.
 
 package main
 
@@ -38,12 +38,13 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 	} else {
 		url = "https://crt.sh/?q=%." + domain + "&output=json&exclude=expired"
 	}
-	log.Println("url:", url)
+	log.Println("Requesting crt.sh:", url)
 	jsonByteArray, err := getJSONfromWebservice(url, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	// write to file so one can have a look at the raw output from crt.sh
 	_ = ioutil.WriteFile("crtsh_response.json", jsonByteArray, 0644)
 
 	if string(jsonByteArray) == "[]" {
@@ -58,14 +59,12 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 
 	// get complete certificate (as PEM) via: https://crt.sh/?d=2086227961 (min_cert_id)
 	for _, certsh := range ctentries {
-		//log.Println("Getting certificate for: " + certsh.SubjectName + " EndDate: " + certsh.ValidTo)
 		url := "https://crt.sh/?d=" + strconv.Itoa(certsh.CRTSH_ID)
-		log.Println("url cert:", url)
+		log.Println("downloading raw cert:", url)
 		rawCert, err := getJSONfromWebservice(url, nil)
 		if err != nil {
 			return nil, err
 		}
-		//log.Println(string(rawCert))
 
 		derCert, _ := pem.Decode(rawCert)
 		cert, err := x509.ParseCertificate(derCert.Bytes)
@@ -76,7 +75,7 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 
 		certificates = append(certificates, *cert)
 
-		// raw cert wegspeichern
+		// save raw cert
 		_ = ioutil.WriteFile("certs/"+cert.Issuer.CommonName+"_"+cert.Subject.CommonName+"_"+cert.SerialNumber.String()+".cer", rawCert, 0644)
 	}
 

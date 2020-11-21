@@ -1,5 +1,5 @@
-// main.go
-// Copyright 2018-2019 Florian Probst.
+// Certificate Transparency Explorer
+// Copyright 2018-2020 Florian Probst.
 
 package main
 
@@ -19,7 +19,7 @@ import (
 func main() {
 	flag.Parse()
 	if len(flag.Args()) > 1 {
-		log.Println("Usage: .\\CertificateTransparencyExplorer <filename with list of domains>")
+		log.Println("Usage: .\\CertificateTransparencyExplorer <filename of file that contains a list of domains>")
 		log.Println("Example: .\\CertificateTransparencyExplorer domains.txt")
 		return
 	}
@@ -38,7 +38,7 @@ func main() {
 
 	allCerts := make([]x509.Certificate, 0)
 	for _, domain := range domains {
-		//crt.sh
+		// get certificates from crt.sh, do not include expired certificates
 		certsCRTSH, err := GetCTEntriesCRTSH(domain, false)
 		if err != nil {
 			log.Println("crt.sh: Error for " + domain + ": " + err.Error())
@@ -67,43 +67,9 @@ func main() {
 	//log.Println("#entrust entries:", len(certsEntrust))
 	//log.Println("#crtsh entries:", len(certsCRTSH))
 
-	log.Println("#log entries:", len(allCerts))
+	log.Println("Number of transparency log entries found:", len(allCerts))
 
 	fetchCAcertificatesAndCRLs(allCerts, nil)
-}
-
-func writeCSV(certificates []x509.Certificate) {
-	f, err := os.Create("certificates.csv")
-	if err != nil {
-		log.Println(err)
-		f.Close()
-		return
-	}
-	defer f.Close()
-
-	writeHeader(f)
-	nrOfPreCerts := 0
-	for _, cert := range certificates {
-		isPreCertificate := false
-
-		for _, unhandled := range cert.UnhandledCriticalExtensions {
-			//  1.3.6.1.4.1.11129.2.4.3
-			if unhandled.Equal([]int{1, 3, 6, 1, 4, 1, 11129, 2, 4, 3}) {
-				isPreCertificate = true
-				nrOfPreCerts++
-			}
-		}
-		writeCert(f, cert, isPreCertificate)
-	}
-
-	err = f.Close()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println("#precerts:", nrOfPreCerts)
-	log.Println("certificates.csv written successfully")
-
 }
 
 func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched map[string]bool) {
@@ -170,14 +136,6 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched 
 	}
 }
 
-func writeCert(f *os.File, cert x509.Certificate, isPreCertificate bool) {
-	fmt.Fprintf(f, "%s;%t;%s;%s;\"%s\";%s;%s\n", cert.SerialNumber, isPreCertificate, cert.Issuer.CommonName, cert.Subject.CommonName, cert.DNSNames, cert.NotBefore.String(), cert.NotAfter.String())
-}
-
-func writeHeader(f *os.File) {
-	fmt.Fprintf(f, "Serial Number;Precertificate;Issuer Common Name;Subject Common Name;DNS Names;Valid from;Valid till\n")
-}
-
 func getDomainsFromFile(filename string) (domains []string, err error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -225,9 +183,3 @@ func writeDNSList(certificates []x509.Certificate) {
 	}
 	log.Println("certificate_domains_found.txt written successfully")
 }
-
-type Certificates []x509.Certificate
-
-func (a Certificates) Len() int           { return len(a) }
-func (a Certificates) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a Certificates) Less(i, j int) bool { return a[i].NotBefore.Before(a[j].NotBefore) }
