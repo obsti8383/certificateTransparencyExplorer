@@ -77,6 +77,10 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched 
 		alreadyFetched = make(map[string]bool)
 	}
 
+	// create directory for writing CA certs and CRLs to
+	_ = os.Mkdir("cacerts", 0755)
+	_ = os.Mkdir("crls", 0755)
+
 	for _, cert := range certificates {
 		cdps := cert.CRLDistributionPoints
 
@@ -126,7 +130,7 @@ func fetchCAcertificatesAndCRLs(certificates []x509.Certificate, alreadyFetched 
 				log.Println("Parsing CA cert " + aia + " resulted in error: " + err.Error())
 				continue
 			}
-			_ = ioutil.WriteFile("certs/"+fetchedCert.Issuer.CommonName+"_"+fetchedCert.Subject.CommonName+".cer", body, 0644)
+			_ = ioutil.WriteFile("cacerts/"+fetchedCert.Issuer.CommonName+"_"+fetchedCert.Subject.CommonName+".cer", body, 0644)
 
 			if fetchedCert.Issuer.CommonName != fetchedCert.Subject.CommonName {
 				// no root ca, go on fetching...

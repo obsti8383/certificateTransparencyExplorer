@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 )
 
@@ -56,6 +57,9 @@ func GetCTEntriesCRTSH(domain string, includeExpired bool) (certificates []x509.
 	if err != nil {
 		return nil, err
 	}
+
+	// create directory to write certs to
+	_ = os.Mkdir("certs", 0755)
 
 	// get complete certificate (as PEM) via: https://crt.sh/?d=2086227961 (min_cert_id)
 	for _, certsh := range ctentries {
