@@ -11,7 +11,7 @@ import (
 
 const (
 	userAgent  = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
-	accept      = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+	accept     = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
 	acceptLang = "en-US,en;q=0.8"
 )
 
@@ -32,7 +32,7 @@ func getJSONfromWebservice(url string, hvals map[string]string) ([]byte, error) 
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func getJSONfromWebservice(url string, hvals map[string]string) ([]byte, error) 
 
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, errors.New(resp.Status)
@@ -56,7 +56,7 @@ func getJSONfromWebservice(url string, hvals map[string]string) ([]byte, error) 
 	in, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 		return nil, err
 	}
 
